@@ -1,0 +1,180 @@
+; References:
+; https://4sysops.com/wiki/windows-10-privacy-settings
+
+Computer
+Software\Microsoft\Windows\CurrentVersion\Policies\TextInput
+AllowLinguisticDataCollection
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Internet Explorer\SQM
+DisableCustomerImprovementProgram
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\SQMClient\Windows
+CEIPEnable
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Windows\AdvertisingInfo
+DisabledByGroupPolicy
+DWORD:1
+
+Computer
+Software\Policies\Microsoft\Windows\AppCompat
+AITEnable
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Windows\AppCompat
+DisableInventory
+DWORD:1
+
+Computer
+Software\Policies\Microsoft\Windows\DataCollection
+AllowTelemetry
+DWORD:1
+
+Computer
+Software\Policies\Microsoft\Windows\DataCollection
+DoNotShowFeedbackNotifications
+DWORD:1
+
+Computer
+Software\Policies\Microsoft\Windows\DeliveryOptimization
+DODownloadMode
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Windows\DeviceInstall\Settings
+DisableSendGenericDriverNotFoundToWER
+DWORD:1
+
+Computer
+Software\Policies\Microsoft\Windows\SettingSync
+DisableSettingSync
+DWORD:2
+
+Computer
+Software\Policies\Microsoft\Windows\SettingSync
+DisableSettingSyncUserOverride
+DWORD:1
+
+Computer
+Software\Policies\Microsoft\Windows\System
+AllowClipboardHistory
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Windows\System
+AllowCrossDeviceClipboard
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Windows\System
+EnableActivityFeed
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Windows\System
+PublishUserActivities
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Windows\System
+UploadUserActivities
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Windows\Windows Error Reporting
+Disabled
+DWORD:1
+
+Computer
+Software\Policies\Microsoft\Windows\Windows Search
+AllowCortana
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Windows\Windows Search
+DisableWebSearch
+DWORD:1
+
+Computer
+Software\Policies\Microsoft\Windows\Windows Search
+ConnectedSearchUseWeb
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Windows\Windows Search
+ConnectedSearchPrivacy
+DWORD:3
+
+; https://gpsearch.azurewebsites.net/#15930
+Computer
+Software\Policies\Microsoft\Dsh
+AllowNewsAndInterests
+DWORD:0
+
+; https://gpsearch.azurewebsites.net/#15942
+Computer
+Software\Policies\Microsoft\Windows\Windows Chat
+ChatIcon
+DWORD:3
+
+; https://gpsearch.azurewebsites.net/#16265
+Computer
+Software\Policies\Microsoft\Windows\Explorer
+HidetaskviewButton
+DWORD:1
+
+; References:
+; https://github.com/troennes/private-secure-windows
+
+User
+Software\Policies\Microsoft\Windows\CloudContent
+DisableThirdPartySuggestions
+DWORD:1
+
+Computer
+Software\Microsoft\Windows\CurrentVersion\Policies\Explorer
+AllowOnlineTips
+DWORD:0
+
+Computer
+SOFTWARE\Policies\Microsoft\Windows\CloudContent
+DisableSoftLanding
+DWORD:1
+
+Computer
+SOFTWARE\Policies\Microsoft\Windows\Windows Feeds
+EnableFeeds
+DWORD:0
+
+Computer
+Software\Policies\Microsoft\Windows\DataCollection
+DisableOneSettingsDownloads
+DWORD:1
+
+Computer
+SOFTWARE\Policies\Microsoft\Windows\CloudContent
+DisableWindowsConsumerFeatures
+DWORD:1
+
+Computer
+Software\Microsoft\OneDrive
+PreventNetworkTrafficPreUserSignIn
+DWORD:1
+
+; https://community.spiceworks.com/topic/2339916-windows-11-deployment-without-bloatware
+Computer
+Software\Policies\Microsoft\Windows\CloudContent
+DisableCloudOptimizedContent
+DWORD:1
+
+; https://community.spiceworks.com/topic/2339916-windows-11-deployment-without-bloatware
+Computer
+Software\Policies\Microsoft\Windows\CloudContent
+DisableConsumerAccountStateContent
+DWORD:1

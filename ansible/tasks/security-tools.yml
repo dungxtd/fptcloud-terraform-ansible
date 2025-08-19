@@ -1,0 +1,131 @@
+---
+# Security and Tools Installation Tasks
+
+- name: Disable Windows Security Center
+  win_regedit:
+    path: HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender Security Center\Notifications
+    name: DisableNotifications
+    data: 1
+    type: dword
+
+- name: Disable Windows Security Center Service
+  win_service:
+    name: SecurityHealthService
+    state: stopped
+    start_mode: disabled
+  ignore_errors: true
+
+- name: Disable Windows Security Center via Registry
+  win_regedit:
+    path: "{{ item.path }}"
+    name: "{{ item.name }}"
+    data: "{{ item.data }}"
+    type: "{{ item.type }}"
+  loop:
+    - { path: "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer", name: "HideSCAHealth", data: 1, type: "dword" }
+    - { path: "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows Defender Security Center\\Systray", name: "HideSystray", data: 1, type: "dword" }
+    - { path: "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows Defender Security Center\\App and Browser protection", name: "UILockdown", data: 1, type: "dword" }
+    - { path: "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows Defender Security Center\\Virus and threat protection", name: "UILockdown", data: 1, type: "dword" }
+
+- name: Disable Windows Firewall completely
+  vars:
+    run_script: ../res/DisableFirewall.ps1
+  include_tasks: util/run.yml
+
+- name: Create tools directory
+  win_file:
+    path: "C:\\Tools"
+    state: directory
+
+- name: Download and install tools via PowerShell
+  win_shell: |
+    # Create tools directory
+    New-Item -Path "C:\Tools" -ItemType Directory -Force
+
+    # Download Mimikatz
+    Write-Host "Downloading Mimikatz..."
+    try {
+        Invoke-WebRequest -Uri "https://github.com/gentilkiwi/mimikatz/releases/download/2.2.0-20220919/mimikatz_trunk.zip" -OutFile "C:\Tools\mimikatz.zip" -UseBasicParsing
+        Write-Host "Mimikatz downloaded successfully"
+
+        # Extract Mimikatz
+        Expand-Archive -Path "C:\Tools\mimikatz.zip" -DestinationPath "C:\Tools\mimikatz" -Force
+        Write-Host "Mimikatz extracted successfully"
+    } catch {
+        Write-Host "Failed to download/extract Mimikatz: $($_.Exception.Message)"
+    }
+
+    # Download Nmap
+    Write-Host "Downloading Nmap..."
+    try {
+        Invoke-WebRequest -Uri "https://nmap.org/dist/nmap-7.94-setup.exe" -OutFile "C:\Tools\nmap-setup.exe" -UseBasicParsing
+        Write-Host "Nmap downloaded successfully"
+
+        # Install Nmap silently
+        Start-Process -FilePath "C:\Tools\nmap-setup.exe" -ArgumentList "/S" -Wait
+        Write-Host "Nmap installed successfully"
+    } catch {
+        Write-Host "Failed to download/install Nmap: $($_.Exception.Message)"
+    }
+  ignore_errors: true
+
+- name: Disable Windows Update Service
+  win_service:
+    name: wuauserv
+    state: stopped
+    start_mode: disabled
+  ignore_errors: true
+
+- name: Disable Windows Update Medic Service
+  win_service:
+    name: WaaSMedicSvc
+    state: stopped
+    start_mode: disabled
+  ignore_errors: true
+
+- name: Disable User Account Control (UAC)
+  win_regedit:
+    path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System
+    name: EnableLUA
+    data: 0
+    type: dword
+
+- name: Disable UAC Consent Prompt
+  win_regedit:
+    path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System
+    name: ConsentPromptBehaviorAdmin
+    data: 0
+    type: dword
+
+- name: Disable SmartScreen
+  win_regedit:
+    path: "{{ item.path }}"
+    name: "{{ item.name }}"
+    data: "{{ item.data }}"
+    type: "{{ item.type }}"
+  loop:
+    - { path: "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System", name: "EnableSmartScreen", data: 0, type: "dword" }
+    - { path: "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer", name: "SmartScreenEnabled", data: "Off", type: "string" }
+
+- name: Create desktop shortcuts for tools
+  win_shortcut:
+    src: "{{ item.src }}"
+    dest: "{{ ansible_env.USERPROFILE }}\\Desktop\\{{ item.name }}.lnk"
+    icon: "{{ item.src }}"
+  loop:
+    - { src: "C:\\Tools\\mimikatz\\x64\\mimikatz.exe", name: "Mimikatz" }
+    - { src: "C:\\Program Files (x86)\\Nmap\\nmap.exe", name: "Nmap" }
+  ignore_errors: true
+
+- name: Display completion message
+  debug:
+    msg: |
+      Security tools installation completed:
+      - Windows Security Center: Disabled
+      - Windows Firewall: Disabled
+      - Mimikatz: Installed in C:\Tools\mimikatz\
+      - Nmap: Installed and added to PATH
+      - UAC: Disabled
+      - SmartScreen: Disabled
+      
+      Note: A system restart may be required for all changes to take effect.

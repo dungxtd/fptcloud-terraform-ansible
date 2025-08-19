@@ -1,0 +1,242 @@
+# FPT Cloud Configuration
+fpt_region      = "hanoi-vn"
+fpt_token       = ""
+fpt_tenant_name = "CÔNG TY CỔ PHẦN RIKKEISOFT"
+
+# Project Configuration
+project_name = "PROJECT_RIKKEISOFT-ORG_DEFAULT"
+environment  = "dev"
+
+# Network Configuration (using existing resources)
+vpc_name            = "RIKKEISOFT-RESTORE-VPC"
+subnet_name         = "subnet-restore"
+security_group_name = "default"
+
+# Default storage policy
+default_storage_policy_id = "your-storage-policy-id"
+
+# Instance Definitions - New VMs to be managed by Terraform
+# Your existing VMs will continue running independently
+instances = {
+  # Example new VM (uncomment to create)
+  # "new-vm-01" = {
+  #   name              = "new-vm-01"
+  #   image_name        = "WINDOWS-11-24H2"
+  #   flavor_name       = "4C4G"
+  #   storage_size_gb   = 100
+  #   storage_policy_id = "your-storage-policy-id"
+  #   os_type           = "windows"
+  #   create_floating_ip = true
+  #   password          = "YourSecurePassword123!"
+  #   tags = {
+  #     Purpose = "new"
+  #     ManagedBy = "terraform"
+  #   }
+  # }
+}
+
+  "auto-w10-22h2" = {
+    name              = "auto-w10-22h2"
+    image_name        = "WINDOWS-10-22H2"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 100
+    storage_policy_id = "your-storage-policy-id"
+    os_type           = "windows"
+    create_floating_ip = false
+    password          = "YourSecurePassword123!"
+    tags = {
+      Purpose = "existing"
+      ImportedFrom = "console"
+      PrivateIP = "172.21.56.57"
+      PublicIP = "113.192.7.34"
+    }
+  }
+
+  "vm-250801103950" = {
+    name              = "vm-250801103950"
+    image_name        = "WINDOWS-11-24H2"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 100
+    storage_policy_id = "your-storage-policy-id"
+    os_type           = "windows"
+    create_floating_ip = false
+    password          = "YourSecurePassword123!"
+    tags = {
+      Purpose = "existing"
+      ImportedFrom = "console"
+      PrivateIP = "172.21.56.31"
+      PublicIP = "113.192.7.146"
+    }
+  }
+
+  "tehtris-w11-24h2-88" = {
+    name              = "tehtris-w11-24h2-88"
+    image_name        = "WINDOWS-11-24H2"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 100
+    storage_policy_id = "your-storage-policy-id"
+    os_type           = "windows"
+    create_floating_ip = false
+    password          = "YourSecurePassword123!"
+    tags = {
+      Purpose = "existing"
+      ImportedFrom = "console"
+      PrivateIP = "172.21.56.191"
+      PublicIP = "113.192.7.59"
+    }
+  }
+
+  "tehtris-w11-24h2-85" = {
+    name              = "tehtris-w11-24h2-85"
+    image_name        = "WINDOWS-11-24H2"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 100
+    storage_policy_id = "your-storage-policy-id"
+    os_type           = "windows"
+    create_floating_ip = false
+    password          = "YourSecurePassword123!"
+    tags = {
+      Purpose = "existing"
+      ImportedFrom = "console"
+      PrivateIP = "172.21.56.92"
+      PublicIP = "113.192.7.134"
+    }
+  }
+
+  "tehtris-w11-24h2-81" = {
+    name              = "tehtris-w11-24h2-81"
+    image_name        = "WINDOWS-11-24H2"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 100
+    storage_policy_id = "your-storage-policy-id"
+    os_type           = "windows"
+    create_floating_ip = false
+    password          = "YourSecurePassword123!"
+    tags = {
+      Purpose = "existing"
+      ImportedFrom = "console"
+      PrivateIP = "172.21.56.178"
+      PublicIP = "113.192.7.100"
+    }
+  }
+
+  # Windows 10 VMs
+  "vm40-win10" = {
+    name              = "vm40-win10"
+    image_name        = "WINDOWS-10"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 100
+    storage_policy_id = "your-storage-policy-id"
+    os_type           = "windows"
+    create_floating_ip = false
+    password          = "YourSecurePassword123!"
+    tags = {
+      Purpose = "existing"
+      ImportedFrom = "console"
+      PrivateIP = "172.21.56.217"
+      PublicIP = "113.192.7.40"
+    }
+  }
+
+  "tehtris-w10-64-22h2-48" = {
+    name              = "tehtris-w10-64-22h2-48"
+    image_name        = "WINDOWS-10"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 100
+    storage_policy_id = "your-storage-policy-id"
+    os_type           = "windows"
+    create_floating_ip = false
+    password          = "YourSecurePassword123!"
+    tags = {
+      Purpose = "existing"
+      ImportedFrom = "console"
+      PrivateIP = "172.21.56.194"
+      PublicIP = "113.192.7.69"
+    }
+  }
+
+  "vm231-win10" = {
+    name              = "vm231-win10"
+    image_name        = "WINDOWS-10"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 100
+    storage_policy_id = "your-storage-policy-id"
+    os_type           = "windows"
+    create_floating_ip = false
+    password          = "YourSecurePassword123!"
+    tags = {
+      Purpose = "existing"
+      ImportedFrom = "console"
+      PrivateIP = "172.21.56.23"
+      PublicIP = "113.192.7.231"
+    }
+  }
+
+  # Windows Server VMs
+  "vm156-winServ19-1" = {
+    name              = "vm156-winServ19-1"
+    image_name        = "WINDOWS-SERVER-2019"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 100
+    storage_policy_id = "your-storage-policy-id"
+    os_type           = "windows"
+    create_floating_ip = false
+    password          = "YourSecurePassword123!"
+    tags = {
+      Purpose = "existing"
+      ImportedFrom = "console"
+      PrivateIP = "172.21.56.249"
+      PublicIP = "113.192.7.156"
+    }
+  }
+
+  "tehtris-wserver-2019-19" = {
+    name              = "tehtris-wserver-2019-19"
+    image_name        = "WINDOWS-SERVER-2019"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 100
+    storage_policy_id = "your-storage-policy-id"
+    os_type           = "windows"
+    create_floating_ip = false
+    password          = "YourSecurePassword123!"
+    tags = {
+      Purpose = "existing"
+      ImportedFrom = "console"
+      PrivateIP = "172.21.56.200"
+      PublicIP = "113.192.7.157"
+    }
+  }
+
+  # Linux VM
+  "tehtris-linux-4" = {
+    name              = "tehtris-linux-4"
+    image_name        = "UBUNTU-22.04"
+    flavor_name       = "2C2G"
+    storage_size_gb   = 60
+    storage_policy_id = "your-storage-policy-id"
+    os_type           = "linux"
+    create_floating_ip = false
+    ssh_key           = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... your-public-key"
+    tags = {
+      Purpose = "existing"
+      ImportedFrom = "console"
+      PrivateIP = "172.21.56.82"
+      PublicIP = "113.192.7.94"
+    }
+  }
+}
+
+# Ansible Configuration
+ansible_user                 = "Admin"  # Will be overridden per OS type
+ansible_ssh_private_key_file = "~/.ssh/your-key"
+windows_password             = "YourSecurePassword123!"
+run_ansible                  = true
+ansible_playbook_path        = "../ansible/setup.yml"
+
+# Common Tags
+common_tags = {
+  Project     = "workstations"
+  Environment = "dev"
+  Owner       = "it-team"
+  ManagedBy   = "terraform"
+}

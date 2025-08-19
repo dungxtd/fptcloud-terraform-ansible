@@ -1,0 +1,5 @@
+---
+- name: Optimize assemblies to improve Powershell performance
+  vars:
+    run_script: ../res/OptimizeAssemblies.ps1
+  include_tasks: util/run.yml

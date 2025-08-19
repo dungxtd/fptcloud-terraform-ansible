@@ -1,0 +1,22 @@
+---
+- name: Run as TrustedInstaller
+  vars:
+    sudo_src_bin: ../../res/PowerRun.exe
+    sudo_dest_bin: "{{ ansible_env.TEMP }}\\PowerRun.exe"
+    # exec_args: File args to use (default: none)
+  block:
+    - name: Copy PowerRun
+      win_copy:
+        src: "{{ sudo_src_bin }}"
+        dest: "{{ sudo_dest_bin }}"
+        force: no
+
+    - name: Execute command
+      vars:
+        exec_file: "{{ sudo_dest_bin }}"
+      include_tasks: exec-interactive.yml
+
+    - name: Cleanup
+      win_file:
+        path: "{{ sudo_dest_bin }}"
+        state: absent

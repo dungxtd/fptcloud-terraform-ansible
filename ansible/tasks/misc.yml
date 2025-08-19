@@ -1,0 +1,181 @@
+---
+- name: Disable animations
+  vars:
+    run_script: ../res/DisableAnimations.ps1
+  include_tasks: util/run-interactive.yml
+
+- name: Set power plan to High Performance
+  win_shell: powercfg.exe -SETACTIVE 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c 
+  when: set_powerplan
+
+- name: Disable screen timeout
+  win_shell: powercfg -change -monitor-timeout-ac 0
+  when: set_powerplan
+
+- name: Disable telemetry
+  win_regedit:
+    path: HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\{{ item }}
+    name: Debugger
+    data: systray.exe
+    type: string
+  loop:
+    - compattelrunner.exe
+    - wsqmcons.exe
+
+- name: Uninstall OneDrive
+  win_shell: |
+    $process = Get-Process onedrive -ErrorAction SilentlyContinue
+    if ($null -ne $process) {
+      $process | Stop-Process -Force
+      Start-Process "$env:SystemRoot\SysWOW64\OneDriveSetup.exe" "/uninstall" -Wait
+      Start-Process "$env:SystemRoot\System32\OneDriveSetup.exe" "/uninstall" -Wait
+    }
+    $true
+
+- name: Uninstall built-in apps
+  win_shell: |
+    Get-AppxPackage *3dviewer* | Remove-AppxPackage
+    Get-AppxPackage *amazon* | Remove-AppxPackage
+    Get-AppxPackage *bingnews* | Remove-AppxPackage
+    Get-AppxPackage *bingweather* | Remove-AppxPackage
+    Get-AppxPackage *clipchamp* | Remove-AppxPackage
+    Get-AppxPackage *disney* | Remove-AppxPackage
+    Get-AppxPackage *facebook* | Remove-AppxPackage
+    Get-AppxPackage *family* | Remove-AppxPackage
+    Get-AppxPackage *feedback* | Remove-AppxPackage
+    Get-AppxPackage *getstarted* | Remove-AppxPackage # Tips
+    Get-AppxPackage *mixedreality* | Remove-AppxPackage
+    Get-AppxPackage *mspaint* | Remove-AppxPackage # Paint 3D
+    Get-AppxPackage *office* | Remove-AppxPackage
+    Get-AppxPackage *onenote* | Remove-AppxPackage
+    Get-AppxPackage *quickassist* | Remove-AppxPackage
+    Get-AppxPackage *skype* | Remove-AppxPackage
+    Get-AppxPackage *solitaire* | Remove-AppxPackage
+    Get-AppxPackage *spotify* | Remove-AppxPackage
+    Get-AppxPackage *teams* | Remove-AppxPackage
+    Get-AppxPackage *tiktok* | Remove-AppxPackage
+    Get-AppxPackage *todos* | Remove-AppxPackage # requires account
+    Get-AppxPackage *whatsapp* | Remove-AppxPackage
+    Get-AppxPackage *windowsmaps* | Remove-AppxPackage
+    Get-AppxPackage *zunevideo* | Remove-AppxPackage # Movies & TV
+    $true
+
+- name: Disable Sticky Keys
+  win_regedit:
+    path: HKCU:\Control Panel\Accessibility\{{ item.path }}
+    name: "{{ item.name }}"
+    data: "{{ item.data }}"
+    type: string
+  loop:
+    - { path: StickyKeys, name: Flags, data: 506 }
+    - { path: Keyboard Response, name: Flags, data: 122 }
+    - { path: ToggleKeys, name: Flags, data: 58 }
+
+- name: Configure Windows Explorer
+  win_regedit:
+    path: HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+    name: "{{ item.name }}"
+    data: "{{ item.data }}"
+    type: dword
+  loop:
+    - { name: Hidden, data: 1 }
+    - { name: HideFileExt, data: 0 }
+    - { name: HideDrivesWithNoMedia, data: 0 }
+    - { name: DisallowShaking, data: 1 }
+    - { name: LaunchTo, data: 1 }
+    - { name: SeparateProcess, data: 1 }
+
+- name: Disable new right-click menu
+  win_regedit:
+    path: HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32
+    name: ""
+    data: ""
+    type: string
+
+- name: Disable Start Menu app suggestions
+  win_regedit:
+    path: HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager
+    name: "{{ item.name }}"
+    data: "{{ item.data }}"
+    type: dword
+  loop:
+    - { name: SubscribedContent-338388Enabled, data: 0 }
+
+- name: Reset pinned apps
+  win_shell: |
+    # https://www.reddit.com/r/sysadmin/comments/yrxd93/remove_irrelevant_win11_pinned_apps_win11_pro/
+    $Layout = 'AppData\Local\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\LocalState'
+    Get-ChildItem 'C:\Users' | ForEach-Object { Remove-Item "C:\Users\$($_.Name)\$Layout" -Recurse -Force -ErrorAction Ignore }
+    Stop-Process -ProcessName explorer
+
+- name: Change hostname
+  when: change_hostname
+  win_shell: |
+    Rename-Computer -NewName "DESKTOP-{{ ansible_user }}"
+
+- name: Disable spy domains via hosts file
+  when: set_spy_block_hosts
+  vars:
+    src_dir: "/tmp/windows-vm-ansible/"
+    dest_dir: "{{ ansible_env.TEMP }}\\windows-vm-ansible"
+    dest_dir_remote: "$env:TEMP\\windows-vm-ansible"
+  block:
+    - name: Make local directory
+      file:
+        path: "{{ src_dir }}"
+        state: directory
+      delegate_to: 127.0.0.1
+
+    - name: Download files
+      get_url:
+        url: "{{ item.url }}"
+        dest: "{{ src_dir }}/{{ item.name }}"
+      loop:
+        - {
+            name: spy.txt,
+            url: https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt,
+          }
+        - {
+            name: spy_v6.txt,
+            url: https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy_v6.txt,
+          }
+      delegate_to: 127.0.0.1
+
+    - name: Copy files
+      win_copy:
+        src: "{{ src_dir }}"
+        dest: "{{ dest_dir }}"
+        force: yes
+
+    - name: Add files to host file
+      win_shell: |
+        $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+        Get-ChildItem "{{ dest_dir_remote }}" | Foreach-Object {
+          "" >> "{{ ansible_env.SystemRoot }}\System32\drivers\etc\hosts"
+          Get-Content $_.FullName >> "{{ ansible_env.SystemRoot }}\System32\drivers\etc\hosts"
+        }
+
+    - name: Cleanup remote
+      win_file:
+        path: "{{ dest_dir }}"
+        state: absent
+
+    - name: Cleanup local
+      file:
+        path: "{{ src_dir }}"
+        state: absent
+      delegate_to: 127.0.0.1
+
+    - name: Set third-party NCSI
+      win_regedit:
+        path: HKLM:\SYSTEM\CurrentControlSet\Services\NlaSvc\Parameters\Internet
+        name: "{{ item.name }}"
+        data: "{{ item.data }}"
+        type: string
+      loop:
+        - { name: ActiveWebProbeContent, data: "success\n" }
+        - { name: ActiveWebProbeContentV6, data: "success\n" }
+        - { name: ActiveWebProbeHost, data: detectportal.firefox.com }
+        - { name: ActiveWebProbeHostV6, data: detectportal.firefox.com }
+        - { name: ActiveWebProbePath, data: / }
+        - { name: ActiveWebProbePathV6, data: / }

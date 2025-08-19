@@ -1,0 +1,107 @@
+---
+# TEHTRIS EDR Installation Task
+
+- name: Copy TEHTRIS EDR MSI to Windows machine
+  win_copy:
+    src: "../res/TEHTRIS_EDR_2.0.0_Windows_x86_64_MS-28.msi"
+    dest: "C:\\Temp\\TEHTRIS_EDR_2.0.0_Windows_x86_64_MS-28.msi"
+    force: yes
+
+- name: Install TEHTRIS EDR with configuration (Attempt 1 - with EULA acceptance)
+  win_shell: >
+    msiexec.exe /i "C:\Temp\TEHTRIS_EDR_2.0.0_Windows_x86_64_MS-28.msi"
+    /quiet /norestart
+    SERVER_ADDRESS=xpgapp16.tehtris.net
+    TAG=XPG_QAT
+    LICENSE_KEY=MH83-2CDX-9DXQ-LG89-92FF
+    IAgree=Yes
+    /l*v C:\Temp\tehtris_install1.log
+  register: tehtris_install1
+  ignore_errors: true
+
+- name: Install TEHTRIS EDR with configuration (Attempt 2 - alternative EULA parameter)
+  win_shell: >
+    msiexec.exe /i "C:\Temp\TEHTRIS_EDR_2.0.0_Windows_x86_64_MS-28.msi"
+    /quiet /norestart
+    SERVER_ADDRESS=xpgapp16.tehtris.net
+    TAG=XPG_QAT
+    LICENSE_KEY=MH83-2CDX-9DXQ-LG89-92FF
+    ACCEPT_EULA=1
+    /l*v C:\Temp\tehtris_install2.log
+  register: tehtris_install2
+  ignore_errors: true
+  when: tehtris_install1.rc != 0 and tehtris_install1.rc != 3010
+
+- name: Install TEHTRIS EDR with configuration (Attempt 3 - both EULA parameters)
+  win_shell: >
+    msiexec.exe /i "C:\Temp\TEHTRIS_EDR_2.0.0_Windows_x86_64_MS-28.msi"
+    /quiet /norestart
+    SERVER_ADDRESS=xpgapp16.tehtris.net
+    TAG=XPG_QAT
+    LICENSE_KEY=MH83-2CDX-9DXQ-LG89-92FF
+    IAgree=Yes
+    ACCEPT_EULA=1
+    /l*v C:\Temp\tehtris_install3.log
+  register: tehtris_install3
+  ignore_errors: true
+  when: (tehtris_install1.rc != 0 and tehtris_install1.rc != 3010) and (tehtris_install2.rc != 0 and tehtris_install2.rc != 3010)
+
+- name: Check installation results
+  debug:
+    msg: |
+      Installation attempts completed:
+      Attempt 1: {{ tehtris_install1.rc | default('skipped') }}
+      Attempt 2: {{ tehtris_install2.rc | default('skipped') }}
+      Attempt 3: {{ tehtris_install3.rc | default('skipped') }}
+
+- name: Display TEHTRIS EDR installation status
+  debug:
+    msg: |
+      TEHTRIS EDR Installation Completed:
+      - Server Address: xpgapp16.tehtris.net
+      - Tag: XPG_QAT
+      - License Key: MH83-2CDX-9DXQ-LG89-92FF
+      - Installation log: C:\Temp\tehtris_install.log
+      
+      Note: A system restart may be required for the EDR to function properly.
+
+- name: Check TEHTRIS EDR service status
+  win_shell: |
+    Get-Service -Name "*TEHTRIS*" -ErrorAction SilentlyContinue | Select-Object Name, Status | Format-Table -AutoSize
+  register: tehtris_services
+  ignore_errors: true
+
+- name: Display TEHTRIS services status
+  debug:
+    msg: "TEHTRIS services status: {{ tehtris_services.stdout }}"
+  when: tehtris_services.stdout is defined and tehtris_services.stdout != ""
+
+- name: Create desktop shortcut for TEHTRIS (if executable exists)
+  win_shell: |
+    # Look for TEHTRIS executable in common installation paths
+    $possiblePaths = @(
+        "C:\Program Files\TEHTRIS\*\*.exe",
+        "C:\Program Files (x86)\TEHTRIS\*\*.exe",
+        "C:\ProgramData\TEHTRIS\*\*.exe"
+    )
+    
+    foreach ($path in $possiblePaths) {
+        $exeFiles = Get-ChildItem -Path $path -ErrorAction SilentlyContinue
+        if ($exeFiles) {
+            foreach ($exe in $exeFiles) {
+                if ($exe.Name -like "*tehtris*" -or $exe.Name -like "*edr*") {
+                    Write-Host "Found TEHTRIS executable: $($exe.FullName)"
+                    
+                    # Create desktop shortcut
+                    $WshShell = New-Object -comObject WScript.Shell
+                    $Shortcut = $WshShell.CreateShortcut("{{ ansible_env.USERPROFILE }}\Desktop\TEHTRIS EDR.lnk")
+                    $Shortcut.TargetPath = $exe.FullName
+                    $Shortcut.Save()
+                    
+                    Write-Host "✓ Desktop shortcut created for TEHTRIS EDR"
+                    break
+                }
+            }
+        }
+    }
+  ignore_errors: true
