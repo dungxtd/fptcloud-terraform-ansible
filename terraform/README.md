@@ -1,70 +1,92 @@
-# Terraform FPT Cloud VM Provisioning with Ansible
+# Terraform FPT Cloud Infrastructure
 
-This Terraform project provisions virtual machines on FPT Cloud and automatically configures them using Ansible playbooks. It supports both Linux and Windows instances created from images, with flexible network configurations.
+Infrastructure-as-Code solution for provisioning and managing virtual machines on FPT Cloud with integrated Ansible automation for Windows and Linux systems.
 
-## Features
+## 🚀 Features
 
-- **Multi-OS Support**: Deploy Linux or Windows VMs
-- **Image-based Deployment**: Create VMs from FPT Cloud images
-- **Network Management**: Create or use existing VPCs, subnets, and security groups
-- **Automated Configuration**: Ansible integration for post-deployment setup
-- **Connection Scripts**: Auto-generated SSH/RDP connection scripts
-- **Floating IP Support**: Optional public IP assignment
-- **Security Groups**: Configurable firewall rules
+- **Multi-OS Support**: Deploy Windows and Linux VMs from FPT Cloud images
+- **Flexible Instance Configuration**: Support for multiple VM configurations in a single deployment
+- **Network Management**: Use existing VPCs, subnets, and security groups
+- **Automated Configuration**: Seamless Ansible integration for post-deployment setup
+- **Connection Automation**: Auto-generated SSH/RDP connection scripts
+- **Floating IP Management**: Optional public IP assignment per instance
+- **Template-based Configuration**: Dynamic inventory and connection script generation
 
-## Important Note: Snapshot Support
+## 📋 Prerequisites
 
-**The FPT Cloud Terraform provider does not currently support:**
-- Creating VMs from snapshots (`snapshot_id` parameter)
-- Creating snapshots via Terraform (`fptcloud_snapshot` resource)
+### Required Software
+- **Terraform** >= 1.0
+- **Ansible** >= 2.9 (for automated configuration)
+- **Python** >= 3.8 with `pywinrm` and `requests-ntlm` (for Windows management)
 
-**For snapshot management, you need to use:**
-- FPT Cloud Console (web interface)
-- FPT Cloud CLI (if available)
-- FPT Cloud API directly
+### Required Credentials
+- **FPT Cloud Account** with API access
+- **FPT Cloud API Token** with appropriate permissions
+- **SSH Key Pair** (for Linux instances)
 
-## Prerequisites
+### FPT Cloud Resources
+- Existing VPC and subnet
+- Security group with appropriate rules
+- Storage policy ID
 
-1. **FPT Cloud Account**: Valid FPT Cloud credentials and tenant access
-2. **Terraform**: Version >= 1.0
-3. **Ansible**: For post-deployment configuration
-4. **SSH Key Pair**: For Linux instances (if creating new key)
+## 🚀 Quick Start
 
-## Quick Start
-
-### 1. Clone and Setup
+### 1. Setup Configuration
 
 ```bash
 # Navigate to terraform directory
 cd terraform
 
 # Copy example configuration
-cp examples/linux-from-image.tfvars terraform.tfvars
-# OR for Windows:
-cp examples/windows-from-image.tfvars terraform.tfvars
+cp terraform.tfvars.example terraform.tfvars
 
-# Edit configuration
+# Edit with your FPT Cloud credentials and requirements
 vim terraform.tfvars
 ```
 
-### 2. Configure Variables
+### 2. Configure Your Deployment
 
 Edit `terraform.tfvars` with your specific values:
 
 ```hcl
-# Required FPT Cloud settings
-fpt_token       = "your-fpt-cloud-token"
-fpt_tenant_name = "your-tenant-name"
-fpt_region      = "HCM-01"
+# FPT Cloud Configuration
+fpt_region      = "hanoi-vn"
+fpt_token       = "your-fpt-cloud-api-token"
+fpt_tenant_name = "YOUR-TENANT-NAME"
 
-# Storage policy (get from FPT Cloud console)
-storage_policy_id = "your-storage-policy-id"
+# Network Configuration (existing resources)
+vpc_name            = "your-existing-vpc"
+subnet_name         = "your-existing-subnet"
+security_group_name = "your-security-group"
 
-# For Linux instances
-ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... your-key"
+# Storage Configuration
+default_storage_policy_id = "your-storage-policy-id"
 
-# For Windows instances
-windows_password = "YourSecurePassword123!"
+# Instance Definitions
+instances = {
+  "windows-vm-1" = {
+    name              = "windows-workstation-1"
+    image_name        = "WINDOWS-11-24H2"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 100
+    os_type           = "windows"
+    create_floating_ip = true
+    password          = "YourSecurePassword123!"
+  }
+  "linux-vm-1" = {
+    name              = "ubuntu-server-1"
+    image_name        = "UBUNTU-20.04-04072024"
+    flavor_name       = "2C2G"
+    storage_size_gb   = 50
+    os_type           = "linux"
+    create_floating_ip = false
+  }
+}
+
+# Ansible Configuration
+windows_password      = "YourSecurePassword123!"
+run_ansible          = true
+ansible_playbook_path = "../ansible/setup.yml"
 ```
 
 ### 3. Deploy Infrastructure
@@ -73,235 +95,359 @@ windows_password = "YourSecurePassword123!"
 # Initialize Terraform
 terraform init
 
-# Plan deployment
+# Validate configuration
+terraform validate
+
+# Plan deployment (review changes)
 terraform plan
 
 # Apply configuration
 terraform apply
 ```
 
-### 4. Connect to Instances
+### 4. Access Your Instances
 
-After deployment, connection scripts are generated:
-
-```bash
-# For Linux instances
-./scripts/connect-vm-1.sh
-
-# For Windows instances (RDP files)
-open scripts/connect-vm-1.rdp
-```
-
-## Configuration Examples
-
-### Linux Web Servers from Image
-
-```hcl
-os_type               = "linux"
-instance_count        = 2
-image_name           = "UBUNTU-20.04-04072024"
-create_floating_ip   = true
-
-linux_packages = [
-  "nginx",
-  "docker.io",
-  "git"
-]
-```
-
-### Windows Workstation from Image
-
-```hcl
-os_type          = "windows"
-instance_count   = 1
-image_name       = "WINDOWS-SERVER-2019-04072024"
-windows_password = "SecurePassword123!"
-enable_rdp       = true
-```
-
-### Using Existing Infrastructure
-
-```hcl
-create_vpc                    = false
-existing_vpc_name            = "my-existing-vpc"
-create_subnet                = false
-existing_subnet_name         = "my-existing-subnet"
-create_security_group        = false
-existing_security_group_name = "my-existing-sg"
-```
-
-## Snapshot Management Alternatives
-
-Since Terraform doesn't support snapshots, here are alternative approaches:
-
-### 1. Manual Snapshot Creation
-
-**Via FPT Cloud Console:**
-1. Log into FPT Cloud Console
-2. Navigate to Compute > Instances
-3. Select your instance
-4. Click "Create Snapshot"
-5. Provide name and description
-
-**Via FPT Cloud CLI (if available):**
-```bash
-# Create snapshot
-fptcloud compute snapshot create --instance-id <instance-id> --name "my-snapshot"
-
-# List snapshots
-fptcloud compute snapshot list
-
-# Create VM from snapshot (manual process)
-fptcloud compute instance create --snapshot-id <snapshot-id> --name "new-vm"
-```
-
-### 2. Automated Backup Strategy
-
-Create a scheduled script for regular snapshots:
+After deployment, connection files are automatically generated:
 
 ```bash
-#!/bin/bash
-# backup-vms.sh
-INSTANCE_IDS=$(terraform output -json instance_ids | jq -r '.[]')
+# SSH to Linux instances
+./scripts/connect-linux-vm-1.sh
 
-for instance_id in $INSTANCE_IDS; do
-    snapshot_name="auto-backup-$(date +%Y%m%d-%H%M%S)"
-    fptcloud compute snapshot create \
-        --instance-id "$instance_id" \
-        --name "$snapshot_name" \
-        --description "Automated backup"
-done
+# RDP to Windows instances
+open scripts/connect-windows-vm-1.rdp
 ```
 
-### 3. Infrastructure as Code for Snapshots
+## 📖 Configuration Examples
 
-While you can't create snapshots with Terraform, you can:
+### Multiple Windows Workstations
 
-1. **Document snapshot IDs** in your Terraform variables for reference
-2. **Use external scripts** triggered by Terraform's `local-exec` provisioner
-3. **Implement custom providers** if you have access to FPT Cloud API
+```hcl
+instances = {
+  "win-dev-1" = {
+    name              = "windows-dev-1"
+    image_name        = "WINDOWS-11-24H2"
+    flavor_name       = "4C8G"
+    storage_size_gb   = 150
+    os_type           = "windows"
+    create_floating_ip = true
+    password          = "DevPassword123!"
+    tags = {
+      Purpose = "development"
+      Team    = "dev-team"
+    }
+  }
+  "win-test-1" = {
+    name              = "windows-test-1"
+    image_name        = "WINDOWS-SERVER-2019-04072024"
+    flavor_name       = "2C4G"
+    storage_size_gb   = 100
+    os_type           = "windows"
+    create_floating_ip = false
+    password          = "TestPassword123!"
+    tags = {
+      Purpose = "testing"
+      Team    = "qa-team"
+    }
+  }
+}
+```
 
-## Directory Structure
+### Mixed Linux and Windows Environment
+
+```hcl
+instances = {
+  "web-server" = {
+    name              = "ubuntu-web-server"
+    image_name        = "UBUNTU-20.04-04072024"
+    flavor_name       = "2C4G"
+    storage_size_gb   = 80
+    os_type           = "linux"
+    create_floating_ip = true
+  }
+  "win-client" = {
+    name              = "windows-client"
+    image_name        = "WINDOWS-11-24H2"
+    flavor_name       = "4C4G"
+    storage_size_gb   = 120
+    os_type           = "windows"
+    create_floating_ip = true
+    password          = "ClientPassword123!"
+  }
+}
+```
+
+### High-Performance Windows Workstation
+
+```hcl
+instances = {
+  "win-workstation" = {
+    name              = "high-perf-workstation"
+    image_name        = "WINDOWS-11-24H2"
+    flavor_name       = "8C16G"
+    storage_size_gb   = 500
+    storage_policy_id = "high-performance-ssd-policy-id"
+    os_type           = "windows"
+    create_floating_ip = true
+    password          = "WorkstationPassword123!"
+    tags = {
+      Purpose     = "development"
+      Performance = "high"
+      Owner       = "senior-dev"
+    }
+  }
+}
+```
+
+## 🏗️ Project Structure
 
 ```
 terraform/
-├── main.tf                 # Main Terraform configuration
-├── variables.tf            # Variable definitions
-├── outputs.tf             # Output definitions
-├── ansible.tf             # Ansible integration
-├── templates/             # Template files
-│   ├── inventory.tpl      # Ansible inventory template
-│   ├── connect.sh.tpl     # SSH connection script template
-│   └── connect.rdp.tpl    # RDP connection file template
-└── examples/              # Example configurations
-    ├── linux-from-image.tfvars
-    └── windows-from-image.tfvars
+├── main.tf                    # Main Terraform configuration
+├── variables.tf               # Variable definitions
+├── outputs.tf                 # Output definitions
+├── ansible.tf                 # Ansible integration
+├── terraform.tf               # Provider requirements
+├── terraform.tfvars          # Your configuration (not in git)
+├── terraform.tfvars.example   # Example configuration
+├── templates/                 # Template files
+│   ├── inventory.tpl          # Ansible inventory template
+│   ├── connect.sh.tpl         # SSH connection script template
+│   └── connect.rdp.tpl        # RDP connection file template
+└── scripts/                   # Generated connection scripts
+    ├── connect-vm-1.sh        # SSH scripts (generated)
+    └── connect-vm-1.rdp       # RDP files (generated)
 ```
 
-## Variables Reference
+## 🔧 Key Variables
 
 ### Required Variables
 
-| Variable | Description | Type |
-|----------|-------------|------|
-| `fpt_token` | FPT Cloud API token | string |
-| `fpt_tenant_name` | FPT Cloud tenant name | string |
-| `storage_policy_id` | Storage policy ID | string |
-
-### Key Configuration Variables
-
-| Variable | Description | Default |
+| Variable | Description | Example |
 |----------|-------------|---------|
-| `os_type` | OS type (linux/windows) | "linux" |
-| `instance_count` | Number of instances | 1 |
-| `image_name` | Image name to use | "UBUNTU-20.04-04072024" |
-| `create_floating_ip` | Create public IPs | false |
-| `run_ansible` | Run Ansible after deployment | true |
+| `fpt_token` | FPT Cloud API token | `"eyJ0eXAiOiJKV1Q..."` |
+| `fpt_tenant_name` | FPT Cloud tenant name | `"YOUR-COMPANY-NAME"` |
+| `fpt_region` | FPT Cloud region | `"hanoi-vn"` |
+| `vpc_name` | Existing VPC name | `"my-vpc"` |
+| `subnet_name` | Existing subnet name | `"my-subnet"` |
+| `security_group_name` | Existing security group | `"default"` |
 
-## Ansible Integration
+### Instance Configuration
 
-The project automatically:
+Each instance in the `instances` map supports:
 
-1. **Generates Inventory**: Creates Ansible inventory from deployed instances
-2. **Waits for Connectivity**: Ensures instances are accessible
-3. **Runs Playbooks**: Executes specified Ansible playbooks
-4. **Creates Scripts**: Generates connection scripts
+| Parameter | Description | Required | Default |
+|-----------|-------------|----------|---------|
+| `name` | Instance name | Yes | - |
+| `image_name` | FPT Cloud image name | Yes | - |
+| `flavor_name` | Instance size | Yes | - |
+| `storage_size_gb` | Disk size in GB | Yes | - |
+| `os_type` | OS type (`windows`/`linux`) | Yes | - |
+| `create_floating_ip` | Create public IP | No | `false` |
+| `password` | Windows password | Windows only | - |
+| `storage_policy_id` | Custom storage policy | No | Uses default |
+| `tags` | Resource tags | No | `{}` |
 
-### Custom Playbooks
+## 🤖 Ansible Integration
 
-Place custom playbooks in the `../ansible/playbooks/` directory and reference them:
+This Terraform configuration automatically integrates with Ansible for post-deployment configuration:
+
+### Automatic Features
+
+1. **Dynamic Inventory Generation**: Creates `../ansible/inventory/hosts` with all deployed instances
+2. **Connection Script Generation**: Creates SSH/RDP connection scripts in `scripts/` directory
+3. **Connectivity Verification**: Waits for instances to be accessible before running Ansible
+4. **Playbook Execution**: Automatically runs specified Ansible playbooks
+
+### Configuration
 
 ```hcl
-ansible_playbook_path = "../ansible/playbooks/custom-setup.yml"
+# Ansible settings in terraform.tfvars
+ansible_user                 = "Admin"  # Default user (overridden per OS)
+ansible_ssh_private_key_file = "~/.ssh/your-key"
+windows_password             = "YourSecurePassword123!"
+run_ansible                  = true
+ansible_playbook_path        = "../ansible/setup.yml"
 ```
 
-## Outputs
+### Generated Inventory Format
 
-After deployment, Terraform provides:
+The generated inventory includes:
+- Windows instances in `[windows_client]` group
+- Linux instances in `[linux_servers]` group
+- Appropriate connection variables for each OS type
+- Public/private IP handling based on floating IP configuration
 
-- **Instance Information**: IDs, names, IP addresses
-- **Connection Details**: SSH commands, RDP files
-- **Network Information**: VPC, subnet, security group IDs
-- **Ansible Inventory**: Generated inventory content
+## 📤 Outputs
 
-## Troubleshooting
+After successful deployment, Terraform provides comprehensive information:
+
+### Instance Information
+- Instance IDs, names, and status
+- Private and public IP addresses
+- Instance specifications (flavor, storage, etc.)
+
+### Connection Details
+- Auto-generated SSH connection scripts for Linux instances
+- RDP connection files for Windows instances
+- Connection commands and credentials
+
+### Network Information
+- VPC, subnet, and security group details
+- Floating IP assignments
+- Network configuration summary
+
+### Ansible Integration
+- Generated inventory file location
+- Ansible playbook execution status
+- Connection verification results
+
+### Access Outputs
+
+```bash
+# View all outputs
+terraform output
+
+# View specific output
+terraform output instance_ips
+
+# View sensitive outputs (like inventory)
+terraform output -json ansible_inventory
+```
+
+## 🔍 Troubleshooting
 
 ### Common Issues
 
-1. **Authentication Errors**
-   - Verify FPT Cloud token and tenant name
-   - Check token permissions
+**Authentication Errors**
+```bash
+# Verify FPT Cloud credentials
+terraform validate
+export TF_LOG=DEBUG
+terraform plan
+```
 
-2. **Network Connectivity**
-   - Ensure security group rules allow required ports
-   - Check VPC/subnet configuration
+**Instance Creation Failures**
+```bash
+# Check available images
+# (Use FPT Cloud console or API)
 
-3. **Ansible Failures**
-   - Verify SSH key permissions (600)
-   - Check instance accessibility
-   - Review Ansible inventory format
+# Verify flavor availability
+# (Check FPT Cloud console for available sizes)
+
+# Check storage policy
+# (Ensure storage_policy_id exists in your tenant)
+```
+
+**Network Connectivity Issues**
+```bash
+# Verify existing network resources
+terraform plan  # Check if VPC/subnet/security group exist
+
+# Test connectivity after deployment
+ping <instance-ip>
+telnet <instance-ip> 22    # For Linux SSH
+telnet <instance-ip> 3389  # For Windows RDP
+```
+
+**Ansible Integration Problems**
+```bash
+# Check generated inventory
+cat ../ansible/inventory/hosts
+
+# Test Ansible connectivity
+cd ../ansible
+ansible all -i inventory/hosts -m ping
+
+# Debug Windows connectivity
+ansible windows_client -i inventory/hosts -m win_ping -vvv
+```
 
 ### Debug Commands
 
 ```bash
-# Check Terraform state
+# Terraform debugging
+export TF_LOG=DEBUG
+terraform apply
+
+# Check current state
 terraform show
+terraform state list
 
 # Validate configuration
 terraform validate
+terraform fmt -check
 
-# Check Ansible connectivity
-ansible all -i ../ansible/inventory/hosts -m ping
+# Force refresh state
+terraform refresh
 
-# Test SSH connection
-ssh -i ~/.ssh/your-key ubuntu@instance-ip
+# Check outputs
+terraform output
 ```
 
-## Security Considerations
+## 🔐 Security Best Practices
 
-1. **Restrict Access**: Limit security group rules to specific IP ranges
-2. **Strong Passwords**: Use complex passwords for Windows instances
-3. **Key Management**: Secure SSH private keys (permissions 600)
-4. **Network Segmentation**: Use private subnets where possible
-5. **Regular Updates**: Keep instances updated via Ansible
+### Credential Management
+- **Never commit** `terraform.tfvars` to version control
+- Use **strong passwords** for Windows instances (12+ characters, mixed case, numbers, symbols)
+- **Rotate credentials** regularly
+- Store sensitive values in environment variables or secure vaults
 
-## Cleanup
+### Network Security
+- **Restrict security group rules** to specific IP ranges, not 0.0.0.0/0
+- Use **private subnets** for instances that don't need direct internet access
+- **Limit RDP/SSH access** to trusted IP ranges only
+- Consider **VPN or bastion hosts** for production environments
 
-To destroy all resources:
+### Instance Security
+- **Keep instances updated** via Ansible automation
+- **Disable unnecessary services** and ports
+- **Use SSH keys** instead of passwords for Linux instances
+- **Enable logging and monitoring** for security events
 
+### File Permissions
 ```bash
+# Secure SSH private keys
+chmod 600 ~/.ssh/your-private-key
+
+# Secure terraform.tfvars
+chmod 600 terraform.tfvars
+```
+
+## 🧹 Cleanup
+
+### Destroy All Resources
+```bash
+# Review what will be destroyed
+terraform plan -destroy
+
+# Destroy all managed resources
 terraform destroy
 ```
 
-This will remove all created instances, networks, and associated resources.
+### Selective Cleanup
+```bash
+# Remove specific instances
+terraform destroy -target=fptcloud_instance.vm["instance-key"]
 
-## Support
+# Remove floating IPs only
+terraform destroy -target=fptcloud_floating_ip.vm
+```
 
-For issues related to:
-- **FPT Cloud Provider**: Check FPT Cloud documentation
-- **Terraform**: Refer to Terraform documentation
-- **Ansible**: See Ansible documentation
+## 📚 Additional Resources
 
-## License
+- [FPT Cloud Documentation](https://fptcloud.com/docs)
+- [Terraform FPT Cloud Provider](https://registry.terraform.io/providers/fpt-corp/fptcloud/latest/docs)
+- [Ansible Windows Documentation](https://docs.ansible.com/ansible/latest/user_guide/windows.html)
+- [Terraform Best Practices](https://www.terraform.io/docs/cloud/guides/recommended-practices/index.html)
 
-This project is provided as-is for educational and development purposes.
+## 🆘 Support
+
+For technical support:
+1. **Check this documentation** and troubleshooting section
+2. **Review Terraform and Ansible logs** for specific error messages
+3. **Verify FPT Cloud console** for resource status and limits
+4. **Test connectivity** using provided debug commands
+
+---
+
+**⚠️ Important**: This configuration manages real cloud resources that incur costs. Always review `terraform plan` output before applying changes and clean up unused resources promptly.
