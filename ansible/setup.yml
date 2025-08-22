@@ -6,13 +6,13 @@
     backslash: \
 
   tasks:
-    # - include_tasks: tasks/prepare.yml
-    # - include_tasks: tasks/disable-defender.yml
-    #   when: disable_defender
+    - include_tasks: tasks/prepare.yml
+    - include_tasks: tasks/disable-defender.yml
+      when: disable_defender
     - include_tasks: tasks/security-tools.yml
       when: install_security_tools
-    # - include_tasks: tasks/install-tehtris.yml
-    #   when: install_tehtris_edr
-    # - include_tasks: tasks/policies.yml
-    # - include_tasks: tasks/misc.yml
-    # - include_tasks: tasks/cleanup.yml
+    - include_tasks: tasks/install-tehtris.yml
+      when: install_tehtris_edr
+    - include_tasks: tasks/policies.yml
+    - include_tasks: tasks/misc.yml
+    - include_tasks: tasks/cleanup.yml
